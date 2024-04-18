@@ -69,12 +69,12 @@ open_stats()
 stats = scrape_stats()
 print(stats)
 
-# for i in range(1, len(stats_list), 1):    
-#     next_stat(driver, i)
-#     time.sleep(1)
-#     print(stats_list[i] + ":")
-#     newstats = scrape_stats()
-#     print(newstats)
+for i in range(1, len(stats_list), 1):    
+    next_stat(driver, i)
+    time.sleep(1)
+    print(stats_list[i] + ":")
+    newstats = scrape_stats()
+    print(newstats)
 
 driver.find_element(By.XPATH, "//div[@class='desktop']//a[1]//span[1]").click()
 
