@@ -31,17 +31,6 @@ def open_stats(driver=driver):
     )
     driver.find_element(By.CLASS_NAME, "cta.lazyloaded").click()
 
-# ########
-# accept_privacy()
-# open_stats()
-
-# if driver.find_element(By.ID, "territory_canvas").is_enabled():
-#     print("element is clickable")
-# else:
-#     print("not clickable")
-
-# ########
-
 def next_stat(driver, i: int):
     WebDriverWait(driver, 5).until(
         EC.presence_of_element_located((By.XPATH, "//div[@class='filter stats']"))
@@ -62,7 +51,8 @@ def scrape_stats(driver=driver):
         for i in range(0, len(p), 3):
             stats[p[i + 1]] = p[i + 2]
         return stats
-    
+
+
 def pens_n_cons(driver=driver):
     WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.XPATH, "//div[@class='desktop']//a[1]//span[1]"))
@@ -73,41 +63,63 @@ def pens_n_cons(driver=driver):
             EC.presence_of_element_located((By.CLASS_NAME, "key-event"))
         )
     key_events = driver.find_elements(By.CLASS_NAME, "key-event")
-    score = []
-    players = []
-    i = 0
-    for event in key_events:    
-        if event.text == "Full Time" or event.text == "Half Time" or event.text == "Start":
+    for i in range(1, len(key_events), 1):    
+        event = driver.find_element(By.XPATH, f"(//div[@class='key-event'])[{i}]")
+        if event.text == "Full Time":
             continue
-        details = event.text.split("\n")
-        players.append(details[0])
-        values = details[1].split(" ")
-        if len(values) == 3:
-            value = int(values[0])
-            score.append(value)
-            if i > 0:
-                if score[i] - score[i - 1] == -2:
-                    print(f"con by: {players[i - 1]}")
-                if score[i] - score[i - 1] == -3:
-                    print(f"pen by: {players[i - 1]}")
-            i += 1
+        name = event.find_element(By.CLASS_NAME, "name").text
+        if event.find_element(By.CLASS_NAME, "icon-image.con"):
+            print("conversion")
+            print(name)
+#     players = []
+#     for event in key_events:
+#         details = event.text.split("\n")  
+#         players.append(details[0])
+#     score = []         
+#     penalties = {}
+#     conversions = {}
+#     i = 0
+#     for event in key_events:    
+#         if event.text == "Full Time" or event.text == "Half Time" or event.text == "Start":
+#             continue
+#         details = event.text.split("\n")
+#         player = details[0]
+#         if player not in penalties:
+#             penalties[player] = 0
+#         if player not in conversions:
+#             conversions[player] = 0
+#         values = details[1].split(" ")
+#         if len(values) == 3:
+#             value = int(values[0])
+#             score.append(value)
+#             if i > 0:
+#                 if score[i] - score[i - 1] == -2:
+#                     conversions[players[i - 1]] += 1
+#                     print(conversions)
+                    
+#                 if score[i] - score[i - 1] == -3:
+#                     penalties[players[i - 1]] += 1
+#                     print(penalties)
+#             print(i)
+#             i += 1
+            
 
-    if score[i] == 3:
-        print(f"pen by: {players[i - 1]}")
-    if score[i] == 2:
-        print(f"con by: {players[i - 1]}")
+#     if score[i - 1] == 3:
+#         print(f"pen by: {players[i - 1]}")
+#     if score[i - 1] == 2:
+#         print(f"con by: {players[i - 1]}")
 
 accept_privacy()
-open_stats()
-stats = scrape_stats()
-print(stats)
+# open_stats()
+# stats = scrape_stats()
+# print(stats)
 
-for i in range(1, len(stats_list), 1):    
-    next_stat(driver, i)
-    time.sleep(1)
-    print(stats_list[i] + ":")
-    newstats = scrape_stats()
-    print(newstats)
+# for i in range(1, len(stats_list), 1):    
+#     next_stat(driver, i)
+#     time.sleep(1)
+#     print(stats_list[i] + ":")
+#     newstats = scrape_stats()
+#     print(newstats)
 
 pens_n_cons()
 
