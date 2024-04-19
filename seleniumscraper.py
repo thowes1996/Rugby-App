@@ -5,7 +5,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import time
-
 service = Service(executable_path="chromedriver.exe")
 driver = webdriver.Chrome(service=service)
 
@@ -63,9 +62,43 @@ def scrape_stats(driver=driver):
         for i in range(0, len(p), 3):
             stats[p[i + 1]] = p[i + 2]
         return stats
+    
+def pens_n_cons(driver=driver):
+    WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.XPATH, "//div[@class='desktop']//a[1]//span[1]"))
+        )
+    driver.find_element(By.XPATH, "//div[@class='desktop']//a[1]//span[1]").click()
+
+    WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "key-event"))
+        )
+    key_events = driver.find_elements(By.CLASS_NAME, "key-event")
+    score = []
+    players = []
+    i = 0
+    for event in key_events:    
+        if event.text == "Full Time" or event.text == "Half Time" or event.text == "Start":
+            continue
+        details = event.text.split("\n")
+        players.append(details[0])
+        values = details[1].split(" ")
+        if len(values) == 3:
+            value = int(values[0])
+            score.append(value)
+            if i > 0:
+                if score[i] - score[i - 1] == -2:
+                    print(f"con by: {players[i - 1]}")
+                if score[i] - score[i - 1] == -3:
+                    print(f"pen by: {players[i - 1]}")
+            i += 1
+
+    if score[i] == 3:
+        print(f"pen by: {players[i - 1]}")
+    if score[i] == 2:
+        print(f"con by: {players[i - 1]}")
+
 accept_privacy()
 open_stats()
-
 stats = scrape_stats()
 print(stats)
 
@@ -76,37 +109,7 @@ for i in range(1, len(stats_list), 1):
     newstats = scrape_stats()
     print(newstats)
 
-driver.find_element(By.XPATH, "//div[@class='desktop']//a[1]//span[1]").click()
-
-key_events = driver.find_elements(By.CLASS_NAME, "key-event")
-score = []
-i = 0
-for event in key_events:    
-    if event.text == "Full Time" or event.text == "Half Time" or event.text == "Start":
-        continue
-    details = event.text.split("\n")
-    values = details[1].split(" ")
-    if len(values) == 3:
-        value = int(values[0])
-        score.append(value)
-        if i == 0:
-            if score[i] == 3:
-                print("penalty by " + details[0])
-            if score[i] == 2:
-                print("conversion" + details[0])
-        else:
-            if score[i] - score[i - 1] == 3:
-                print("penalty by " + details[0])
-            if score[i] - score[i - 1] == 2:
-                print("conversion by " + details[0])
-        i += 1
-    
-
-
-#     if driver.find_elements(By.XPATH, "//div[@class='penalty']//div")
-# penalties = driver.find_elements
-
-# print(len(penalties))
+pens_n_cons()
 
 time.sleep(10)
 
