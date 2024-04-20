@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import time
+from selenium.common.exceptions import TimeoutException
 service = Service(executable_path="chromedriver.exe")
 driver = webdriver.Chrome(service=service)
 
@@ -63,67 +64,43 @@ def pens_n_cons(driver=driver):
             EC.presence_of_element_located((By.CLASS_NAME, "key-event"))
         )
     key_events = driver.find_elements(By.CLASS_NAME, "key-event")
-    for i in range(1, len(key_events), 1):    
-        event = driver.find_element(By.XPATH, f"(//div[@class='key-event'])[{i}]")
-        if event.text == "Full Time":
-            continue
-        name = event.find_element(By.CLASS_NAME, "name").text
-        if event.find_element(By.CLASS_NAME, "icon-image.con"):
-            print("conversion")
-            print(name)
-#     players = []
-#     for event in key_events:
-#         details = event.text.split("\n")  
-#         players.append(details[0])
-#     score = []         
-#     penalties = {}
-#     conversions = {}
-#     i = 0
-#     for event in key_events:    
-#         if event.text == "Full Time" or event.text == "Half Time" or event.text == "Start":
-#             continue
-#         details = event.text.split("\n")
-#         player = details[0]
-#         if player not in penalties:
-#             penalties[player] = 0
-#         if player not in conversions:
-#             conversions[player] = 0
-#         values = details[1].split(" ")
-#         if len(values) == 3:
-#             value = int(values[0])
-#             score.append(value)
-#             if i > 0:
-#                 if score[i] - score[i - 1] == -2:
-#                     conversions[players[i - 1]] += 1
-#                     print(conversions)
-                    
-#                 if score[i] - score[i - 1] == -3:
-#                     penalties[players[i - 1]] += 1
-#                     print(penalties)
-#             print(i)
-#             i += 1
+    for i in range(1, len(key_events), 1):   
+            event = driver.find_element(By.XPATH, f"(//div[@class='key-event'])[{i}]")
+            if event.text == "Full Time" or event.text == "Half Time" or event.text == "Start":
+                continue
             
-
-#     if score[i - 1] == 3:
-#         print(f"pen by: {players[i - 1]}")
-#     if score[i - 1] == 2:
-#         print(f"con by: {players[i - 1]}")
+            try:
+                WebDriverWait(driver, 0.5).until(
+                    EC.presence_of_element_located((By.XPATH, f"(//div[@class='key-event'])[{i}]//div[@class='icon-image con']"))
+                )
+                print("conversion")
+                name = event.find_element(By.CLASS_NAME, "name").text
+                print(name)
+            except TimeoutException:
+                pass
+            try:
+                WebDriverWait(driver, 0.5).until(
+                    EC.presence_of_element_located((By.XPATH, f"(//div[@class='key-event'])[{i}]//div[@class='icon-image pg']"))
+                )
+                print("pen")
+                name = event.find_element(By.CLASS_NAME, "name").text
+                print(name)
+            except TimeoutException:
+                pass
 
 accept_privacy()
-# open_stats()
-# stats = scrape_stats()
-# print(stats)
+open_stats()
+stats = scrape_stats()
+print(stats)
 
-# for i in range(1, len(stats_list), 1):    
-#     next_stat(driver, i)
-#     time.sleep(1)
-#     print(stats_list[i] + ":")
-#     newstats = scrape_stats()
-#     print(newstats)
+for i in range(1, len(stats_list), 1):    
+    next_stat(driver, i)
+    time.sleep(1)
+    print(stats_list[i] + ":")
+    newstats = scrape_stats()
+    print(newstats)
 
 pens_n_cons()
-
-time.sleep(10)
 
 driver.quit()
 
