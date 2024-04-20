@@ -77,15 +77,10 @@ def pens_n_cons(driver):
             except TimeoutException:
                 pass
 
-def get_teams(driver):
-    c.execute("""
-              """)
-
 
 if __name__ == '__main__':
-    sys.path.append("\PROJECTS")
 
-    service = Service(executable_path="chromedriver.exe")
+    service = Service(executable_path="../chromedriver.exe")
     driver = webdriver.Chrome(service=service)
     chrome_options = Options()
     chrome_options.add_argument('-ignore-certificate-errors')
@@ -103,7 +98,7 @@ if __name__ == '__main__':
 
 
     query = """INSERT INTO game(game_id, game_name) 
-                VALUES(?, ?)
+                VALUES(?, ?);
             """
     value = (game_id, game_name)
     # try:

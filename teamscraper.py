@@ -7,23 +7,29 @@ from selenium.webdriver.chrome.options import Options
 import time
 from selenium.common.exceptions import TimeoutException
 import sqlite3
-import sys
 from statscraper import accept_privacy
 
-def next_team(driver):
+prem_teams = ["bath", "bristol", "exeter-chiefs", "gloucester", "harlequins", "leicester", "newcastle", "northampton", "sale", "saracens"]
+def next_team(driver, i: int):
     WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "teams-grid"))
+            EC.presence_of_element_located((By.XPATH, f"//a[@href='https://www.rugbypass.com/teams/{prem_teams[i]}/']"))
         )
-    teams = driver.find_elements(By.CLASS_NAME, "teams-grid")
+    driver.find_element(By.XPATH, f"//a[@href='https://www.rugbypass.com/teams/{prem_teams[i]}/']").click()
 
-    for team in teams:
-        WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, "https://www.rugbypass.com/teams/"))
+def get_players(driver, i):
+    WebDriverWait(driver, 2).until(
+        EC.presence_of_element_located((By.CLASS_NAME, "player-col"))
         )
-        team.find_element(By.PARTIAL_LINK_TEXT, "www.rugbypass.com").click()
-        time.sleep(2)
-        driver.back()
-
+    players = driver.find_elements(By.CLASS_NAME, "player-col")
+    for player in players:
+        name = player.find_element(By.CLASS_NAME, "name").text
+        position = player.find_element(By.CLASS_NAME, "position").text
+        query = """INSERT INTO players (player_name, position, team_id)
+                    VALUES (?, ?, ?);
+                """
+        values = (name, position, i + 1)
+        c.execute(query, values)
+    connect.commit()
 
 if __name__ == '__main__':
     service = Service(executable_path="C:/Users/thowes/Desktop/Projects/chromedriver.exe")
@@ -31,22 +37,29 @@ if __name__ == '__main__':
     chrome_options = Options()
     chrome_options.add_argument('-ignore-certificate-errors')
 
-    connect = sqlite3.connect('player-stats.db')
-
-    c = connect.cursor()
     URL = "https://www.rugbypass.com/premiership/teams/"
     driver.get(URL)
 
     driver.set_window_position(2000, 0)
     driver.maximize_window()
+    connect = sqlite3.connect('player-stats.db')
+    c = connect.cursor()
 
-    # def next_team(driver, i: int):
-    #     teams.find
     accept_privacy(driver)
-
-    next_team(driver)
-    # for i in range(0, len(teams), 1):
-    #     next_team(driver, i)
+    query = """INSERT INTO teams (team_name)
+                VALUES(?);"""
+    for i in range(0, len(prem_teams), 1):
+        value = (prem_teams[i],)
+        try:
+            c.execute(query, value)
+        except sqlite3.IntegrityError:
+            quit()
+    
+    connect.commit()
+    for i in range(0, len(prem_teams), 1):
+        next_team(driver, i)
+        get_players(driver, i)
+        driver.back()        
        
 
 
