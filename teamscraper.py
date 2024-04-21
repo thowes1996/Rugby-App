@@ -24,6 +24,16 @@ def get_players(driver, i):
     for player in players:
         name = player.find_element(By.CLASS_NAME, "name").text
         position = player.find_element(By.CLASS_NAME, "position").text
+        if position == 'Flanker 7':
+            position = 'Openside Flanker'
+        if position == 'Centre 13':
+            position = 'Outside Centre'
+        if position == 'Lock 4':
+            position == 'Lock'
+        if position[-4:] == 'Wing':
+            position == 'Wing'
+        if position[-4:] == 'Prop':
+            position = 'Prop'
         query = """INSERT INTO players (player_name, position, team_id)
                     VALUES (?, ?, ?);
                 """
@@ -42,7 +52,7 @@ if __name__ == '__main__':
 
     driver.set_window_position(2000, 0)
     driver.maximize_window()
-    connect = sqlite3.connect('player-stats.db')
+    connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/Rugby-App/player-stats.db')
     c = connect.cursor()
 
     accept_privacy(driver)

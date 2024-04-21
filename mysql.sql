@@ -1,8 +1,9 @@
-INSERT INTO Bath_vs_Harlequins
-VALUES ('Finn', 'Russell');
+-- INSERT INTO Bath_vs_Harlequins
+-- VALUES ('Finn', 'Russell');
 
-DELETE FROM games
+-- DELETE FROM games
 
+-- # Table schemas
 CREATE TABLE games (
             game_id INTEGER,
             game_name TEXT,
@@ -14,9 +15,8 @@ CREATE TABLE games (
             );
 
 CREATE TABLE teams (
-            team_id INTEGER,
-            team_name TEXT,
-            PRIMARY KEY (team_id)
+            team_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_name TEXT
         );
 
 CREATE TABLE players (
@@ -27,11 +27,12 @@ CREATE TABLE players (
             FOREIGN KEY (team_id) REFERENCES teams(team_id)
             );
 
-INSERT INTO teams (team_id, team_name)
-VALUES(?, ?)
+-- INSERT INTO teams (team_id, team_name)
+-- VALUES(?, ?)
 
+-- SELECT * FROM games, players WHERE players.team_id = home_id or players.team_id = away_id;
 
-.schema
+-- SELECT player_name, team_name FROM players, teams WHERE players.team_id = teams.team_id
 
 
 
