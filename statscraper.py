@@ -144,7 +144,6 @@ def add_stat(players: dict, stat: str):
                 c.execute(player_entry, values)
                 players_added.append(player)
                 added_ids.append(player_id)
-                print(added_ids, players_added)
         stat_entry = f"""UPDATE stats SET {stat} = {players[player]} WHERE game_id = {game_id} 
                             AND player_id = {player_id};
                     """
@@ -175,12 +174,12 @@ def add_stat(players: dict, stat: str):
     
 if __name__ == '__main__':
 
-    service = Service(executable_path="../chromedriver.exe")
+    service = Service(executable_path="chromedriver.exe")
     driver = webdriver.Chrome(service=service)
     chrome_options = Options()
     chrome_options.add_argument('-ignore-certificate-errors')
 
-    connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/Rugby-App/player-stats.db')
+    connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/player-stats.db')
 
     c = connect.cursor()
     URL = "https://www.rugbypass.com/live/bristol-vs-newcastle/?g=939008"
@@ -198,8 +197,6 @@ if __name__ == '__main__':
     stats = {}
     home, away = add_game(driver, game_id, game_name)
     penalties, conversions = pens_n_cons(driver)
-    print(penalties)
-    print(conversions)
 
     open_stats(driver)
     
@@ -210,7 +207,6 @@ if __name__ == '__main__':
 
     for i in range(1, len(stats_list), 1):    
         next_stat(driver, i)
-        print(stats_list[i - 1])
         stat = stats_list_sql[i - 1]
         stats[stats_list[i - 1]] = scrape_stats(driver)
         current_stat = stats[stats_list[i - 1]]

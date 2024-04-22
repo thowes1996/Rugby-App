@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     driver.set_window_position(2000, 0)
     driver.maximize_window()
-    connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/Rugby-App/player-stats.db')
+    connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/player-stats.db')
     c = connect.cursor()
 
     accept_privacy(driver)
