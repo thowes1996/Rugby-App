@@ -37,6 +37,9 @@ def next_stat(driver, i: int):
 
 def scrape_stats(driver):
     stats = {}
+    WebDriverWait(driver, 5).until(
+        EC.presence_of_element_located((By.ID, "players-selector-result"))
+    )
     players = driver.find_element(By.ID, "players-selector-result").text
     p = players.split("\n")
     if p[0] == "":
@@ -46,10 +49,17 @@ def scrape_stats(driver):
             stats[p[i + 1]] = p[i + 2]
         return stats
 
+# stats = {}
+# for s in _:
+#     if name not in stats:
+#         stats[name] = {}
+#     stats[name][stat] = value
+
 
 
 def pens_n_cons(driver):
-
+    penalties = {}
+    conversions = {}
     WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CLASS_NAME, "key-event"))
         )
@@ -63,57 +73,109 @@ def pens_n_cons(driver):
                 WebDriverWait(driver, 0.5).until(
                     EC.presence_of_element_located((By.XPATH, f"(//div[@class='key-event'])[{i}]//div[@class='icon-image con']"))
                 )
-                print("conversion")
                 name = event.find_element(By.CLASS_NAME, "name").text
-                print(name)
+                if name not in conversions:
+                    conversions[name] = 1
+                else:
+                    conversions[name] += 1
+
             except TimeoutException:
                 pass
             try:
                 WebDriverWait(driver, 0.5).until(
                     EC.presence_of_element_located((By.XPATH, f"(//div[@class='key-event'])[{i}]//div[@class='icon-image pg']"))
                 )
-                print("pen")
                 name = event.find_element(By.CLASS_NAME, "name").text
-                print(name)
+                if name not in penalties:
+                    penalties[name] = 1
+                else:
+                    penalties[name] += 1
             except TimeoutException:
                 pass
 
-def add_game(driver):
-    game_id = int(URL[-6:])
-    print(game_id)
-    game_name = URL.removeprefix("https://www.rugbypass.com/live/").removesuffix(f"/?g={game_id}")
-    print(game_name)
+    return penalties, conversions
 
+def add_game(driver, game_id, game_name):
     WebDriverWait(driver, 2).until(
         EC.presence_of_element_located((By.CLASS_NAME, "team.home"))
     )
     home = driver.find_element(By.CLASS_NAME, "team.home").text.lower()
     away = driver.find_element(By.CSS_SELECTOR, "div[class='team-status'] div[class='team']").text.lower()
-    print(away)
     home_query = f""" SELECT team_id FROM teams WHERE team_name = '{home}';
               """
     home_id = c.execute(home_query)
     home_id = int(home_id.fetchone()[0])
-    print(home_id)
     away_query = f""" SELECT team_id FROM teams WHERE team_name = '{away}';
               """
     away_id = c.execute(away_query)
     away_id = int(away_id.fetchone()[0])
-    print(away_id)
 
-    query = """INSERT INTO games (game_id, game_name, home_id, away_id) 
+    game_query = """INSERT INTO games (game_id, game_name, home_id, away_id) 
                 VALUES(?, ?, ?, ?);
             """
     value = (game_id, game_name, home_id, away_id)
     try:
-        c.execute(query, value)
+        c.execute(game_query, value)
     except sqlite3.IntegrityError:
         quit()
     connect.commit()
+    return home, away
 
+def add_stat(players: dict, stat: str):
+    player_query = f"""SELECT player_name FROM players WHERE player_id IN (SELECT player_id FROM stats WHERE game_id = {game_id});
+                    """
+    player_entry = f"""INSERT INTO stats (player_id, game_id) VALUES (? , ?);"""
+
+    
+    players_in_stats = c.execute(player_query)
+    players_in_stats = players_in_stats.fetchall()
+    players_added = []
+    for i in players_in_stats:
+        for item in i:
+            players_added.append(str(item).casefold())
+    for player in players:
+        player_id_query = f"""SELECT player_id FROM players WHERE player_name LIKE '%{player}%' AND team_id IN 
+                            (SELECT team_id FROM teams WHERE team_name = '{home}' or team_name = '{away}');
+                             """
+        id = c.execute(player_id_query)
+        player_id = int(id.fetchone()[0])
+        if player.casefold() not in players_added and player_id not in added_ids:
+                values = player_id, game_id
+                c.execute(player_entry, values)
+                players_added.append(player)
+                added_ids.append(player_id)
+                print(added_ids, players_added)
+        stat_entry = f"""UPDATE stats SET {stat} = {players[player]} WHERE game_id = {game_id} 
+                            AND player_id = {player_id};
+                    """
+        c.execute(stat_entry)
+    connect.commit()
+            
+    # if stat == 'penalties' or stat == 'conversions':
+    #     kicker_id_query = f"""SELECT player_id FROM players WHERE player_name LIKE '%{player}' AND team_id IN 
+    #                         (SELECT team_id FROM teams WHERE team_name = '{home}' or team_name = '{away}') 
+    #                         AND player_id IN (SELECT player_id FROM players 
+    #                         WHERE position = 'Centre' or position = 'Scrum Half' 
+    #                         or position = 'Full Back' or position = 'Fly Half' 
+    #                         or position = 'Inside Centre' or position = 'Outside Centre');"""
+    #     player_id = c.execute(kicker_id_query)
+    #     player_id = int(player_id.fetchone()[0])
+    #     values = (game_id, player_id, i)
+    #     c.execute(stat_query, values)
+    #     connect.commit()
+    # else:
+    #     player_id_query = f"""SELECT player_id FROM players WHERE player_name LIKE '%{player}%' AND team_id IN 
+    #                         (SELECT team_id FROM teams WHERE team_name = '{home}' or team_name = '{away}')
+    #                         """ 
+    #     player_id = c.execute(player_id_query)
+    #     player_id = int(player_id.fetchone()[0])
+    #     values = (game_id, player_id, i)
+    #     c.execute(stat_query, values)
+    #     connect.commit()
+    
 if __name__ == '__main__':
 
-    service = Service(executable_path="chromedriver.exe")
+    service = Service(executable_path="../chromedriver.exe")
     driver = webdriver.Chrome(service=service)
     chrome_options = Options()
     chrome_options.add_argument('-ignore-certificate-errors')
@@ -121,25 +183,43 @@ if __name__ == '__main__':
     connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/Rugby-App/player-stats.db')
 
     c = connect.cursor()
-    URL = "https://www.rugbypass.com/live/bristol-vs-gloucester/?g=939003"
+    URL = "https://www.rugbypass.com/live/bristol-vs-newcastle/?g=939008"
     driver.get(URL)
     stats_list = ["Carries", "Kicks", "Passes", "Metres Carried", "Line Breaks", "Offloads", "Defenders Beaten", "Try Assists", "Tries", "Turnovers Lost", "Carries Per Minute", "Tackles Made", "Tackles Missed", "Tackles Completed", "Dominant Tackles", "Turnovers Won", "Ruck Turnovers", "Lineouts Won", "Total Tackles Per Minute", "Red Cards", "Yellow Cards", "Penalties Conceded"]
+    stats_list_sql = []
+    for stat in stats_list:
+        stats_list_sql.append(stat.lower().removeprefix("total ").replace(" ", "_"))
 
     driver.set_window_position(2000,0)
     driver.maximize_window()
+    game_id = int(URL[-6:])
+    game_name = URL.removeprefix("https://www.rugbypass.com/live/").removesuffix(f"/?g={game_id}")
     accept_privacy(driver)
-    add_game(driver)
-    # pens_n_cons()
-    # open_stats()
-    # print(stats_list[0])
-    # stats = scrape_stats()
-    # print(stats)
-    # for i in range(1, len(stats_list), 1):    
-    #     next_stat(driver, i)
-    #     time.sleep(1)
-    #     print(stats_list[i] + ":")
-    #     newstats = scrape_stats()
-    #     print(newstats)
+    stats = {}
+    home, away = add_game(driver, game_id, game_name)
+    penalties, conversions = pens_n_cons(driver)
+    print(penalties)
+    print(conversions)
+
+    open_stats(driver)
+    
+    stats[stats_list[0]] = scrape_stats(driver)
+    added_ids = []
+    current_stat = stats[stats_list[0]]
+    add_stat(current_stat, stats_list_sql[0])
+
+    for i in range(1, len(stats_list), 1):    
+        next_stat(driver, i)
+        print(stats_list[i - 1])
+        stat = stats_list_sql[i - 1]
+        stats[stats_list[i - 1]] = scrape_stats(driver)
+        current_stat = stats[stats_list[i - 1]]
+        add_stat(current_stat, stat)
+    
+    stats["penalties"] = penalties
+    stats["conversions"] = conversions
+    add_stat(stats["penalties"], "penalties")
+    add_stat(stats["conversions"], "conversions")
 
     connect.close()
     driver.quit()
