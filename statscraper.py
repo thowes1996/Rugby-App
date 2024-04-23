@@ -49,12 +49,6 @@ def scrape_stats(driver):
             stats[p[i + 1]] = p[i + 2]
         return stats
 
-# stats = {}
-# for s in _:
-#     if name not in stats:
-#         stats[name] = {}
-#     stats[name][stat] = value
-
 
 
 def pens_n_cons(driver):
@@ -101,12 +95,12 @@ def add_game(driver, game_id, game_name):
     )
     home = driver.find_element(By.CLASS_NAME, "team.home").text.lower()
     away = driver.find_element(By.CSS_SELECTOR, "div[class='team-status'] div[class='team']").text.lower()
-    home_query = f""" SELECT team_id FROM teams WHERE team_name = '{home}';
-              """
+    home_query = f""" SELECT team_id FROM teams WHERE team_name LIKE '{home}';
+                    """
     home_id = c.execute(home_query)
     home_id = int(home_id.fetchone()[0])
-    away_query = f""" SELECT team_id FROM teams WHERE team_name = '{away}';
-              """
+    away_query = f""" SELECT team_id FROM teams WHERE team_name LIKE '{away}';
+                    """
     away_id = c.execute(away_query)
     away_id = int(away_id.fetchone()[0])
 
@@ -134,11 +128,15 @@ def add_stat(players: dict, stat: str):
         for item in i:
             players_added.append(str(item).casefold())
     for player in players:
-        player_id_query = f"""SELECT player_id FROM players WHERE player_name LIKE '%{player}%' AND team_id IN 
+        player_id_query = f"""SELECT player_id FROM players WHERE player_name LIKE "%{player}%" AND team_id IN 
                             (SELECT team_id FROM teams WHERE team_name = '{home}' or team_name = '{away}');
                              """
         id = c.execute(player_id_query)
-        player_id = int(id.fetchone()[0])
+        player_id = id.fetchone()
+        if player_id is None:
+            continue
+        else:
+            player_id = int(player_id[0])
         if player.casefold() not in players_added and player_id not in added_ids:
                 values = player_id, game_id
                 c.execute(player_entry, values)
@@ -149,59 +147,9 @@ def add_stat(players: dict, stat: str):
                     """
         c.execute(stat_entry)
     connect.commit()
-            
-    # if stat == 'penalties' or stat == 'conversions':
-    #     kicker_id_query = f"""SELECT player_id FROM players WHERE player_name LIKE '%{player}' AND team_id IN 
-    #                         (SELECT team_id FROM teams WHERE team_name = '{home}' or team_name = '{away}') 
-    #                         AND player_id IN (SELECT player_id FROM players 
-    #                         WHERE position = 'Centre' or position = 'Scrum Half' 
-    #                         or position = 'Full Back' or position = 'Fly Half' 
-    #                         or position = 'Inside Centre' or position = 'Outside Centre');"""
-    #     player_id = c.execute(kicker_id_query)
-    #     player_id = int(player_id.fetchone()[0])
-    #     values = (game_id, player_id, i)
-    #     c.execute(stat_query, values)
-    #     connect.commit()
-    # else:
-    #     player_id_query = f"""SELECT player_id FROM players WHERE player_name LIKE '%{player}%' AND team_id IN 
-    #                         (SELECT team_id FROM teams WHERE team_name = '{home}' or team_name = '{away}')
-    #                         """ 
-    #     player_id = c.execute(player_id_query)
-    #     player_id = int(player_id.fetchone()[0])
-    #     values = (game_id, player_id, i)
-    #     c.execute(stat_query, values)
-    #     connect.commit()
-    
-if __name__ == '__main__':
 
-    service = Service(executable_path="chromedriver.exe")
-    driver = webdriver.Chrome(service=service)
-    chrome_options = Options()
-    chrome_options.add_argument('-ignore-certificate-errors')
-
-    connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/player-stats.db')
-
-    c = connect.cursor()
-    URL = "https://www.rugbypass.com/live/bristol-vs-newcastle/?g=939008"
-    driver.get(URL)
-    stats_list = ["Carries", "Kicks", "Passes", "Metres Carried", "Line Breaks", "Offloads", "Defenders Beaten", "Try Assists", "Tries", "Turnovers Lost", "Carries Per Minute", "Tackles Made", "Tackles Missed", "Tackles Completed", "Dominant Tackles", "Turnovers Won", "Ruck Turnovers", "Lineouts Won", "Total Tackles Per Minute", "Red Cards", "Yellow Cards", "Penalties Conceded"]
-    stats_list_sql = []
-    for stat in stats_list:
-        stats_list_sql.append(stat.lower().removeprefix("total ").replace(" ", "_"))
-
-    driver.set_window_position(2000,0)
-    driver.maximize_window()
-    game_id = int(URL[-6:])
-    game_name = URL.removeprefix("https://www.rugbypass.com/live/").removesuffix(f"/?g={game_id}")
-    accept_privacy(driver)
-    stats = {}
-    home, away = add_game(driver, game_id, game_name)
-    penalties, conversions = pens_n_cons(driver)
-
-    open_stats(driver)
-    
+def stats_to_db(driver):
     stats[stats_list[0]] = scrape_stats(driver)
-    added_ids = []
     current_stat = stats[stats_list[0]]
     add_stat(current_stat, stats_list_sql[0])
 
@@ -216,6 +164,42 @@ if __name__ == '__main__':
     stats["conversions"] = conversions
     add_stat(stats["penalties"], "penalties")
     add_stat(stats["conversions"], "conversions")
+    
+if __name__ == '__main__':
 
+    service = Service(executable_path="../chromedriver.exe")
+    driver = webdriver.Chrome(service=service)
+    chrome_options = Options()
+    chrome_options.add_argument('-ignore-certificate-errors')
+
+    connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/player-stats.db')
+
+    c = connect.cursor()
+    URL = "https://www.rugbypass.com/premiership/fixtures-results/"
+    driver.get(URL)
+    stats_list = ["Carries", "Kicks", "Passes", "Metres Carried", "Line Breaks", "Offloads", "Defenders Beaten", "Try Assists", "Tries", "Turnovers Lost", "Carries Per Minute", "Tackles Made", "Tackles Missed", "Tackles Completed", "Dominant Tackles", "Turnovers Won", "Ruck Turnovers", "Lineouts Won", "Total Tackles Per Minute", "Red Cards", "Yellow Cards", "Penalties Conceded"]
+    stats_list_sql = []
+    for stat in stats_list:
+        stats_list_sql.append(stat.lower().removeprefix("total ").replace(" ", "_"))
+    
+    driver.set_window_position(2000,0)
+    driver.maximize_window()
+    accept_privacy(driver)
+    for i in range(938938, 939013, 1):
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, f"div[data-id='{i}']"))
+        )
+        driver.find_element(By.CSS_SELECTOR, f"div[data-id='{i}']").click()       
+        URL = driver.current_url       
+        game_id = int(URL[-6:])
+        game_name = URL.removeprefix("https://www.rugbypass.com/live/").removesuffix(f"/?g={game_id}")
+        stats = {}
+        home, away = add_game(driver, game_id, game_name)
+        penalties, conversions = pens_n_cons(driver)
+        open_stats(driver)
+        added_ids = []
+        stats_to_db(driver)
+        driver.back()
+        driver.back()
     connect.close()
     driver.quit()
