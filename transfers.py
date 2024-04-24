@@ -8,7 +8,7 @@ import time
 from selenium.common.exceptions import TimeoutException
 import sqlite3
 
-service = Service(executable_path="C:/Users/thowes/Desktop/Projects/chromedriver.exe")
+service = Service(executable_path="C:/Users/tomho/Desktop/Projects/chromedriver.exe")
 driver = webdriver.Chrome(service=service)
 chrome_options = Options()
 chrome_options.add_argument('-ignore-certificate-errors')
@@ -58,7 +58,7 @@ def add_player(name: str, pos: str, team: str, i: int):
 if __name__ == '__main__':
     driver.set_window_position(2000, 0)
     driver.maximize_window()
-    connect = sqlite3.connect('C:/Users/thowes/Desktop/Projects/player-stats.db')
+    connect = sqlite3.connect('C:/Users/tomho/Desktop/Projects/player-stats.db')
     c = connect.cursor()
     accept_privacy(driver)
     WebDriverWait(driver, 5).until(
