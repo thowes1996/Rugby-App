@@ -55,7 +55,7 @@ if __name__ == '__main__':
     connect = sqlite3.connect('C:/Users/tomho/Desktop/Projects/player-stats.db')
     c = connect.cursor()
 
-    accept_privacy(driver)
+    # accept_privacy(driver)
     query = """INSERT INTO teams (team_name)
                 VALUES(?);"""
     for i in range(0, len(prem_teams), 1):

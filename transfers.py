@@ -60,17 +60,23 @@ if __name__ == '__main__':
     driver.maximize_window()
     connect = sqlite3.connect('C:/Users/tomho/Desktop/Projects/player-stats.db')
     c = connect.cursor()
-    accept_privacy(driver)
+    # accept_privacy(driver)
     WebDriverWait(driver, 5).until(
         EC.presence_of_element_located((By.CLASS_NAME, "mutations"))
     )
     transfers = driver.find_elements(By.CLASS_NAME, "mutations")
-    prem_teams = ['bath', 'bristol', 'exeter-chiefs', 'gloucester', 'harlequins', 'leicester', 'newcastle', 'northampton', 'sale', 'saracens']
+    prem_teams = ['bath', 'bristol', 'exeter-chiefs', 'gloucester', 'harlequins', 'leicester', 'london irish', 'newcastle', 'northampton', 'sale', 'saracens']
     i = 0
     counter = 0
     for transfer in transfers:
         pro_transfers = transfer.text.replace("Players IN", "").replace("Academy", "").replace("Players OUT", "").replace("Gone during season", "").replace("Pro\n", "")
         pro_transfers = pro_transfers.split("\n")
+        if prem_teams[i] == 'london irish':
+            counter += 1
+            if counter == 2:
+                counter = 0
+                i += 1
+            continue
         print(f"***\n{prem_teams[i]}\n***")
         for player in pro_transfers:
             if player == '':

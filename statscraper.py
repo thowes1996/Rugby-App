@@ -167,7 +167,7 @@ def stats_to_db(driver):
     
 if __name__ == '__main__':
 
-    service = Service(executable_path="chromedriver.exe")
+    service = Service(executable_path="C:/Users/tomho/Desktop/Projects/chromedriver.exe")
     driver = webdriver.Chrome(service=service)
     chrome_options = Options()
     chrome_options.add_argument('-ignore-certificate-errors')
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     driver.set_window_position(2000,0)
     driver.maximize_window()
     accept_privacy(driver)
-    for i in range(938967, 938968, 1):
+    for i in range(939030, 939031, 1):
         WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, f"div[data-id='{i}']"))
         )
