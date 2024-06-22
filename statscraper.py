@@ -104,10 +104,20 @@ def add_game(driver, game_id, game_name):
     away_id = c.execute(away_query)
     away_id = int(away_id.fetchone()[0])
 
-    game_query = """INSERT INTO games (game_id, game_name, home_id, away_id) 
-                VALUES(?, ?, ?, ?);
+    home_score = int(driver.find_element(By.CLASS_NAME, "home-score").text)
+    away_score = int(driver.find_element(By.CLASS_NAME, "away-score").text)
+    print(home_score, away_score)
+    if home_score > away_score:
+        result = "home"
+    elif away_score > home_score:
+        result = "away"
+    else:
+        result = "draw"
+
+    game_query = """INSERT INTO games (game_id, game_name, home_id, away_id, home_score, away_score, result) 
+                VALUES(?, ?, ?, ?, ?, ?, ?);
             """
-    value = (game_id, game_name, home_id, away_id)
+    value = (game_id, game_name, home_id, away_id, home_score, away_score, result)
     try:
         c.execute(game_query, value)
     except sqlite3.IntegrityError:
@@ -185,7 +195,7 @@ if __name__ == '__main__':
     driver.set_window_position(2000,0)
     driver.maximize_window()
     accept_privacy(driver)
-    for i in range(939030, 939031, 1):
+    for i in range(938938, 939031, 1):
         WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, f"div[data-id='{i}']"))
         )
