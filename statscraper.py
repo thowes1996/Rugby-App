@@ -15,6 +15,13 @@ def accept_privacy(driver):
     )
     driver.find_element(By.CLASS_NAME, "css-47sehv").click()
 
+def select_season(driver):
+    driver.execute_script("window.scrollTo(0, 0)")
+    WebDriverWait(driver, 2).until(
+        EC.presence_of_element_located((By.XPATH, "//div[@id='comp-season']"))
+    )
+    driver.find_element(By.XPATH, "//div[@id='comp-season']").click()
+    driver.find_element(By.XPATH, "//li[@aria-label='Choose Season 2024']").click()
 def open_stats(driver):
     WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.XPATH, "//div[@class='desktop']//a[2]//span[1]"))
@@ -25,29 +32,30 @@ def open_stats(driver):
     )
     driver.find_element(By.CLASS_NAME, "cta.lazyloaded").click()
 
-def next_stat(driver, i: int):
+def next_stat(driver, j: int):
     WebDriverWait(driver, 5).until(
         EC.presence_of_element_located((By.XPATH, "//div[@class='filter stats']"))
     )
     driver.find_element(By.XPATH, "//div[@class='filter stats']").click()
     WebDriverWait(driver, 5).until(
-        EC.presence_of_element_located((By.XPATH, f"(//div[@class='list-item'][normalize-space()='{stats_list[i]}'])[1]"))
+        EC.presence_of_element_located((By.XPATH, f"(//div[@class='list-item'][normalize-space()='{stats_list[j]}'])[1]"))
     )
-    driver.find_element(By.XPATH, f"(//div[@class='list-item'][normalize-space()='{stats_list[i]}'])[1]").click()
+    driver.find_element(By.XPATH, f"(//div[@class='list-item'][normalize-space()='{stats_list[j]}'])[1]").click()
+    time.sleep(0.2)
 
 def scrape_stats(driver):
-    stats = {}
+    scraped = {}
     WebDriverWait(driver, 5).until(
         EC.presence_of_element_located((By.ID, "players-selector-result"))
     )
     players = driver.find_element(By.ID, "players-selector-result").text
     p = players.split("\n")
     if p[0] == "":
-        return stats
+        return scraped
     else:      
         for i in range(0, len(p), 3):
-            stats[p[i + 1]] = p[i + 2]
-        return stats
+            scraped[p[i + 1]] = p[i + 2]
+        return scraped
 
 
 
@@ -106,7 +114,6 @@ def add_game(driver, game_id, game_name):
 
     home_score = int(driver.find_element(By.CLASS_NAME, "home-score").text)
     away_score = int(driver.find_element(By.CLASS_NAME, "away-score").text)
-    print(home_score, away_score)
     if home_score > away_score:
         result = "home"
     elif away_score > home_score:
@@ -159,16 +166,17 @@ def add_stat(players: dict, stat: str):
     connect.commit()
 
 def stats_to_db(driver):
-    stats[stats_list[0]] = scrape_stats(driver)
-    current_stat = stats[stats_list[0]]
-    add_stat(current_stat, stats_list_sql[0])
-
-    for i in range(1, len(stats_list), 1):    
-        next_stat(driver, i)
-        stat = stats_list_sql[i - 1]
-        stats[stats_list[i - 1]] = scrape_stats(driver)
-        current_stat = stats[stats_list[i - 1]]
-        add_stat(current_stat, stat)
+    print(stats_list_sql)
+    print(stats_list)
+    for i, (stat_sql, stat) in enumerate(zip(stats_list_sql, stats_list)):
+        stats[stat] = scrape_stats(driver)
+        current_stat = stats[stat]
+        print(current_stat, stat_sql, "\n\n")
+        add_stat(current_stat, stat_sql)
+        if i < len(stats_list) - 1:
+            next_stat(driver, i + 1)
+        else:
+            break
     
     stats["penalties"] = penalties
     stats["conversions"] = conversions
@@ -182,7 +190,7 @@ if __name__ == '__main__':
     chrome_options = Options()
     chrome_options.add_argument('-ignore-certificate-errors')
 
-    connect = sqlite3.connect('C:/Users/tomho/Desktop/Projects/player-stats.db')
+    connect = sqlite3.connect('C:/Users/tomho/Desktop/Projects/player-stats-test.db')
 
     c = connect.cursor()
     URL = "https://www.rugbypass.com/premiership/fixtures-results/"
@@ -196,6 +204,7 @@ if __name__ == '__main__':
     driver.maximize_window()
     accept_privacy(driver)
     for i in range(938938, 939031, 1):
+        select_season(driver)
         WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, f"div[data-id='{i}']"))
         )
